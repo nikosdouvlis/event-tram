@@ -1,0 +1,5 @@
+{
+  "main": "../dist/strategies/index.cjs",
+  "module": "../dist/strategies/index.js",
+  "types": "../dist/strategies/index.d.ts"
+}
