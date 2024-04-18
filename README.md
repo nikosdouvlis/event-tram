@@ -20,17 +20,17 @@
 🚨 This is a pre-release version, `event-tram` is still under active development and the API might change 🚨 
 
 EventTram is a topic-based publish/subscribe library with full Typescript support. Even though it is inspired by
-`Backbone Events` and `Backbone Radio`, `EventTram` introduces some new concepts aiming to improve flexibility, predictability, maintainability and type-safety:
+`Backbone Events` and `Backbone Radio`, `EventTram` introduces some new concepts aiming to improve flexibility, predictability, maintainability, and type-safety:
 
 - **Channels**: A channel is a way to group events. This is useful when you want to namespace your events but also make sure that these events can only be published/subscribed only by the consumers that need them. Channels can be used to isolate topics and consumers from each other.
 - **Readonly and writeonly channels**: By leveraging Typescript types, EventTram allows you to create channels that can only be published to or subscribed to. This is useful when you want to enforce a unidirectional data flow in your application.
-- **Queries**: Queries provide uniform way for unrelated parts of the system to communicate with each other, either by requesting data or triggering actions to be performed. The different between queries and normal events is that, queries are pull-based. If a part of the codebase requires immediate access to data or an action, it can use a query instead of depending on a different module. This lets EventTram be the common dependency, decoupling modules from each other even when direct access is required. 
+- **Queries**: Queries provide a uniform way for unrelated parts of the system to communicate with each other, either by requesting data or triggering actions to be performed. The difference between queries and normal events is that queries are pull-based. If a part of the codebase requires immediate access to data or an action, it can use a query instead of depending on a different module. This lets EventTram be the common dependency, decoupling modules from each other even when direct access is required. 
 - **Cross-tab communication**: EventTram provides a way to communicate between tabs with the same origin. This is useful when you want to synchronize state between tabs or trigger actions in other tabs.
-- **Typed contracts**: All events, payloads, channels and queries are defined on the type-level by default. There is no need to use constants as your event identifiers or use event factories.
-- **Register new channels and events on the fy**: EventTram allows you to register new channels and events on the fly. This is useful when you want to dynamically add new features, eg: plugins, to your application that your main EventTram instance does not know about during the initialisation phase.
-- **Synchronisation decoupling**: Even though EventTram supports synchronous publishing of events using the `publishSync` method, the default behavior is to publish events asynchronously to enable proper synchronisation decoupling. All events will be published at the end of the current event loop. This helps keep the codebase predictable as the originator of topics will not be blocked while consumers process them.
+- **Typed contracts**: All events, payloads, channels, and queries are defined on the type-level by default. There is no need to use constants as your event identifiers or use event factories.
+- **Register new channels and events on the fly**: EventTram allows you to register new channels and events on the fly. This is useful when you want to dynamically add new features, eg: plugins, to your application that your main EventTram instance does not know about during the initialization phase.
+- **Synchronisation decoupling**: Even though EventTram supports synchronous publishing of events using the `publishSync` method, the default behavior is to publish events asynchronously to enable proper synchronization decoupling. All events will be published at the end of the current event loop. This helps keep the codebase predictable as the originator of topics will not be blocked while consumers process them.
 
-The library was written with bundle-size in mind. The final bundle-size is now approximately 600bytes in size (minified and gzipped) and another ~300bytes for the cross-tab support strategy, if required. All strict checks exist on the TS-level only so nothing ends up in the final bundle. Events, channels and queries are defined on the type level as well. Adding a new event, channel or query has minimal impact on the bundle size, especially when the final bundle is minified and gzipped.
+The library was written with bundle-size in mind. The final bundle-size is now approximately 600bytes in size (minified and gzipped) and another ~300bytes for the cross-tab support strategy, if required. All strict checks exist on the TS-level only so nothing ends up in the final bundle. Events, channels, and queries are defined on the type level as well. Adding a new event, channel or query has minimal impact on the bundle size, especially when the final bundle is minified and gzipped.
 
 ## Installation
 Simply run
@@ -43,7 +43,7 @@ npm i event-tram
 > 📘 Note: 
 > The EventTram is a Channel that also let's you create other channels. Anything that can be used on a Channel, can also be used on the root EventTram instance, eg: `eventTram.channel('auth').on(...)` and `eventTram.on(...)`
 
-Simply define the types, channels and queries using the type helper and instantiate an `EventTram` object. This object will usually be exported from a well-known module in your application. You can create as many EventTram instances as you need, or use a single instance and channels to namespace your events. 
+Simply define the types, channels, and queries using the type helper and instantiate an `EventTram` object. This object will usually be exported from a well-known module in your application. You can create as many EventTram instances as you need, or use a single instance and channels to namespace your events. 
 
 For more details about the configuration options, refer to the inline JSDoc comments in the code.
 
@@ -76,7 +76,7 @@ eventTram.publish('token:fetchEnd', { token: '123' });
 Similar to the above, but with channels. Use `Channel` to define a channel - a channel is described by a key, an `EventMap` and an optional `QueryMap`. Use `ChannelMap` to define a group of channels. 
 
 ```ts
-import type { Event, EventMap } from 'event-tram';
+import type { Event, EventMap, ChannelMap, Channel } from 'event-tram';
 import { EventTram } from 'event-tram';
 
 // Use Event and EventMap to define your events
@@ -112,7 +112,7 @@ Use the `ReadonlyChannel` and `WriteonlyChannel`, or the `.readonly` and `.write
 >
 > Notice that in the examples below, the services depend on the channel interface and not the actual implementation. This allows for better decoupling and testability, as implementation can be injected at runtime. When testing, there is no need to mock the main EventTram instance of your app, simply pass your own mock implementation.
 
-The following example expands on the previous example and shows alternative syntax for creating a channel and accessing it.
+The following example expands on the previous example and shows an alternative syntax for creating a channel and accessing it.
 
 Define a `consumer-service.ts` service that can only subscribe to events:
 ```ts
@@ -162,7 +162,7 @@ Queries can also be async.
 
 First, define your types and instantiate the EventTram instance:
 ```ts
-import type { Event, EventMap } from 'event-tram';
+import type { Event, EventMap, QueryMap, Query, ChannelMap, Channel } from 'event-tram';
 import { EventTram } from 'event-tram';
 
 type LifecycleEvents = EventMap<
@@ -212,7 +212,7 @@ Applications that require both in-tab and cross-tab communication, need to insta
   - Published events will not be received by the tab that published them.
   - Queries will not be received by the tab that initiated them and will timeout if no other tab responds.
 - Queries always return a promise - the handler needs to be asynchronous.
-- A `query` call will timeout with an error if there is no tab that registered a handler for the query. The timeout can be customised by passing a `timeout` option to the `BroadcastChannelNotifyStrategy` constructor.
+- A `query` call will timeout with an error if there is no tab that registered a handler for the query. The timeout can be customized by passing a `timeout` option to the `BroadcastChannelNotifyStrategy` constructor.
 
 The following example shows how to create a cross-tab communication channel and use it to synchronize tokens between tabs:
 ```ts
@@ -242,7 +242,7 @@ export const crossTabEventTram = new EventTram<CrossTabChannels>({
 ### Register new channels, events or queries on the fly
 The following example will show how to register a new channel even after instantiating the `EventTram` instance. Registering extra events and queries can be done in the same way, using the `registerEvents` and `registerQueries` methods.
 
-In the following example, we pretend that the `BillingPlugin` module is a plugin that is added to the application at runtime. The module will register a new channel and a new event on the main EventTram instance that will be passed in to the plugin during the initialisation phase.
+In the following example, we pretend that the `BillingPlugin` module is a plugin that is added to the application at runtime. The module will register a new channel and a new event on the main EventTram instance that will be passed into the plugin during the initialization phase.
 
 ```ts
 import type { Event, EventMap, Channel } from 'event-tram';
